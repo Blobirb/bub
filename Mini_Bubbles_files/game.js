@@ -6729,9 +6729,11 @@ var Game;
             }
             new Game.BigButtonDialog();
             new Game.LevelAdLoader();
+            Game.Level.countStepsLevel = 0;
             return _this;
         }
         Level.prototype.onReset = function () {
+            Game.Level.countStepsLevel = 0;
             _super.prototype.onReset.call(this);
             //triggerActions("play");
         };
@@ -7916,7 +7918,7 @@ var Game;
             _this.text.scale = (Game.Level.speedrun ? 0.55 : 1);
             _this.text.enabled = true;
             _this.text.pinned = true;
-            _this.text.str = Game.Level.countStepsSpeedrun == 0 ? "0.000" : LevelTimer.getTextValue(Game.Level.countStepsSpeedrun);
+            _this.text.str = Game.Level.countStepsLevel == 0 ? "0.000" : LevelTimer.getTextValue(Game.Level.countStepsLevel);
             _this.text.xAlignBounds = Utils.AnchorAlignment.MIDDLE;
             _this.text.xAlignView = Utils.AnchorAlignment.MIDDLE;
             _this.text.yAlignBounds = Utils.AnchorAlignment.START;
@@ -7973,9 +7975,8 @@ var Game;
         };
         LevelTimer.prototype.onStepUpdate = function () {
             if (!Game.Player.instance.winning && !Game.Player.instance.losing && !Game.SceneFreezer.stoped) {
-                //Game.Level.countStepsSpeedrun += 1;
-                //this.text.str = LevelTimer.getTextValue(Game.Level.countStepsSpeedrun);
-                this.text.str = "1234";
+                Game.Level.countStepsLevel += 1;
+                this.text.str = LevelTimer.getTextValue(Game.Level.countStepsLevel);
             }
         };
         return LevelTimer;
