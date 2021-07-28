@@ -54,6 +54,7 @@ class Engine {
 
 		untyped window.coffee._keyup = this.keyup;
 		untyped window.coffee._keydown = this.keydown;
+		untyped window.coffee._getSpeed = function() { return control.speed; }
 
 		// API for runners
 		untyped window.coffee.load = function(string:String) {
@@ -205,7 +206,7 @@ class Engine {
 			preventDefault: function() {},
 			stopPropagation: function () {}
 		};
-		
+
 		if (down) {
 			keydownHandler(event);
 		} else {
