@@ -2591,7 +2591,9 @@ var Engine;
                 //@ts-ignore
                 var nowTime = Date.now() / 1000.0;
                 //@ts-ignore
-                System.deltaTime = nowTime - System.oldTime;
+                //System.deltaTime = nowTime - System.oldTime;
+                System.deltaTime = window.coffee._getFrameLength();
+
                 if (System.deltaTime > System.MAX_DELTA_TIME) {
                     //@ts-ignore
                     System.deltaTime = System.MAX_DELTA_TIME;
@@ -6747,11 +6749,19 @@ var Game;
             new Game.BigButtonDialog();
             new Game.LevelAdLoader();
             Game.Level.countStepsLevel = 0;
+
+            // TAS - notifying the TAS tool on entering a new level
+            //window.coffee._onScene(Level.index);
+
             return _this;
         }
         Level.prototype.onReset = function () {
             Game.Level.countStepsLevel = 0;
             _super.prototype.onReset.call(this);
+
+            // TAS - notifying the TAS tool on restarting the level
+            window.coffee._onScene(Level.index);
+
             //triggerActions("play");
         };
         Level.prototype.onStepUpdate = function () {
@@ -6841,10 +6851,6 @@ var Game;
             Level.instance = null;
         };
         Level.nextIndex = 1;
-
-        // TAS - notifying the TAS tool on entering a new level
-        window.coffee._onScene(Level.index);
-
         return Level;
     }(Game.SceneMap));
     Game.Level = Level;

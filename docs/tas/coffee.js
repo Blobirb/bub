@@ -163,6 +163,7 @@ PlayControl.prototype = {
 	}
 };
 var Engine = function() {
+	this.isReset = false;
 	this.initialDirection = 0;
 	this.fakeTime = 0;
 	this.pausedCallback = haxe_ds_Option.None;
@@ -186,6 +187,9 @@ var Engine = function() {
 	window.coffee._keydown = $bind(this,this.keydown);
 	window.coffee._getSpeed = function() {
 		return _gthis.control.speed;
+	};
+	window.coffee._getFrameLength = function() {
+		return _gthis.frameLength;
 	};
 	window.coffee.load = function(string) {
 		_gthis.slots[0] = new Video(string);
@@ -246,9 +250,9 @@ Engine.prototype = {
 				if(_gthis.control.frame + 1 >= player.video.pauseFrame) {
 					if(_gthis.fullgameVideo == null) {
 						_gthis.control.pause();
-						console.log("tas_haxe_files/Engine.hx:114:","[PAUSE ] @ " + (_gthis.control.frame + 1));
+						console.log("tas_haxe_files/Engine.hx:117:","[PAUSE ] @ " + (_gthis.control.frame + 1));
 						_gthis.control.silent = false;
-					} else if(_gthis.fullgameLevelCounter >= 1 && _gthis.fullgameLevelCounter <= 15) {
+					} else {
 						_gthis.initialDirection = _gthis.fullgameVideo[_gthis.fullgameLevelCounter - 1].initialDirection;
 						_gthis.control.frame = 0;
 						_gthis.primeControls(true);
@@ -309,7 +313,7 @@ Engine.prototype = {
 	}
 	,onKey: function(event,down) {
 		if(!Util.isSome(this.playback)) {
-			var suppress = [83,87,65,68,82];
+			var suppress = [83,87,65,68,82,80];
 			if(suppress.indexOf(event.keyCode) == -1) {
 				this.sendGameInput(event.keyCode,down);
 			}
@@ -345,19 +349,19 @@ Engine.prototype = {
 		}
 		if(this.initialDirection == 1) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:223:","---> Holding controls: LEFT.");
+				console.log("tas_haxe_files/Engine.hx:224:","---> Holding controls: LEFT.");
 			}
 			this.sendGameInput(37,true);
 		}
 		if(this.initialDirection == 2) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:228:","---> Holding controls: RIGHT.");
+				console.log("tas_haxe_files/Engine.hx:229:","---> Holding controls: RIGHT.");
 			}
 			this.sendGameInput(39,true);
 		}
 		if(this.initialDirection == 0) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:233:","---> Holding controls: NONE.");
+				console.log("tas_haxe_files/Engine.hx:234:","---> Holding controls: NONE.");
 			}
 		}
 	}
@@ -365,9 +369,9 @@ Engine.prototype = {
 		if(replay == null) {
 			replay = false;
 		}
-		console.log("tas_haxe_files/Engine.hx:240:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
+		console.log("tas_haxe_files/Engine.hx:241:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
 		this.sendGameInput(82,true);
-		this.sendGameInput(82,false);
+		this.isReset = true;
 		this.recording = new VideoRecorder(this.initialDirection);
 		this.control = new PlayControl();
 		this.primeControls(true);
@@ -380,13 +384,13 @@ Engine.prototype = {
 	,handleInterfaceInput: function(input,ctrlKey,altKey) {
 		var oldControl = JSON.parse(JSON.stringify(this.control));
 		if(input == CoffeeInput.StepFrame && this.control.paused) {
-			console.log("tas_haxe_files/Engine.hx:261:","[STEP  ] @ " + (this.control.frame + 1));
+			console.log("tas_haxe_files/Engine.hx:265:","[STEP  ] @ " + (this.control.frame + 1));
 			this.triggerPausedCallback();
 			return true;
 		}
 		if(input == CoffeeInput.Pause) {
 			if(!oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:269:","[PAUSE ] @ " + (this.control.frame + 1));
+				console.log("tas_haxe_files/Engine.hx:273:","[PAUSE ] @ " + (this.control.frame + 1));
 			}
 			this.control.pause();
 			return true;
@@ -408,7 +412,7 @@ Engine.prototype = {
 		if(playAction) {
 			this.control.paused = false;
 			if(oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:290:","[PLAY  ] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:294:","[PLAY  ] @ " + this.control.frame);
 			}
 			this.triggerPausedCallback();
 			return true;
@@ -443,8 +447,8 @@ Engine.prototype = {
 			if(ctrlKey && !altKey) {
 				this.control.pause();
 				var video = this.recording.saveVideo(this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:333:","[SAVE slot " + slot + "] @ " + this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:334:","data: " + video.toString());
+				console.log("tas_haxe_files/Engine.hx:337:","[SAVE slot " + slot + "] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:338:","data: " + video.toString());
 				this.slots[slot] = video;
 				return true;
 			}
@@ -452,7 +456,11 @@ Engine.prototype = {
 		return false;
 	}
 	,onScene: function(levelNum) {
-		console.log("tas_haxe_files/Engine.hx:345:","[SCENE " + levelNum + "]");
+		console.log("tas_haxe_files/Engine.hx:349:","[SCENE " + levelNum + "]");
+		if(this.isReset) {
+			this.sendGameInput(82,false);
+		}
+		this.isReset = false;
 		if(this.fullgameVideo != null && this.fullgameVideo.length >= levelNum) {
 			this.fullgameLevelCounter = levelNum;
 			this.loadPlayback(this.fullgameVideo[this.fullgameLevelCounter - 1]);
@@ -492,7 +500,7 @@ KeyBindings.fromKeyCode = function(code) {
 		return haxe_ds_Option.Some(CoffeeInput.PlayNormal);
 	case 70:
 		return haxe_ds_Option.Some(CoffeeInput.PlayFast);
-	case 79:
+	case 80:
 		return haxe_ds_Option.Some(CoffeeInput.Replay);
 	case 82:
 		return haxe_ds_Option.Some(CoffeeInput.Reset);

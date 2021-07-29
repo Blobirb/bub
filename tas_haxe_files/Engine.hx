@@ -29,7 +29,7 @@ class Engine {
 	var recording:Video.VideoRecorder = new Video.VideoRecorder(0);
 	var slots:Array<Video>;
 
-	var fullgameVideo:Dynamic = null; // Special level-by-level videos for eddynardo.
+	var fullgameVideo:Dynamic = null; // Special level-by-level videos
 	var fullgameLevelCounter:Int = 0;
 
 	var pausedCallback:Option<Dynamic> = None;
@@ -38,6 +38,8 @@ class Engine {
 	var _requestAnimationFrame:Dynamic;
 	var _now:Dynamic;
 	var initialDirection = 0;
+
+	var isReset:Bool = false;
 
 	public function new() {
 		// Inject our methods into the global scope.
@@ -55,6 +57,7 @@ class Engine {
 		untyped window.coffee._keyup = this.keyup;
 		untyped window.coffee._keydown = this.keydown;
 		untyped window.coffee._getSpeed = function() { return control.speed; }
+		untyped window.coffee._getFrameLength = function() { return frameLength; }
 
 		// API for runners
 		untyped window.coffee.load = function(string:String) {
@@ -116,11 +119,9 @@ class Engine {
 						} else {
 							// for fullgame playback, prime the initial direction controls
 
-							if (fullgameLevelCounter >= 1 && fullgameLevelCounter <= 15) {
-								initialDirection = fullgameVideo[fullgameLevelCounter - 1].initialDirection;
-								control.frame = 0;
-								primeControls(true);
-							}
+							initialDirection = fullgameVideo[fullgameLevelCounter - 1].initialDirection;
+							control.frame = 0;
+							primeControls(true);
 						}
 
 						playback = None;
@@ -181,7 +182,7 @@ class Engine {
 	function onKey(event:Dynamic, down:Bool) {
 		if (!Util.isSome(playback)) {
 			// We're not in playback, so we should pass through keys.
-			var suppress = [83, 87, 65, 68, 82]; // prevent pressing alternate movement keys and 'r'
+			var suppress = [83, 87, 65, 68, 82, 80]; // prevent pressing alternate movement keys and 'r' and 'p'
 			if (suppress.indexOf(event.keyCode) == -1)
 				sendGameInput(event.keyCode, down);
 		}
@@ -238,8 +239,11 @@ class Engine {
 		if (replay == null)
 			replay = false;
 		trace('[${replay ? "REPLAY" : "RESET to"} ${(slot == null) ? "start" : "slot " + Std.string(slot) + "..."}]');
+		
 		sendGameInput(82, true);
-		sendGameInput(82, false);
+		isReset = true;
+		//sendGameInput(82, false);
+
 		recording = new Video.VideoRecorder(initialDirection);
 		control = new PlayControl();
 		primeControls(true);
@@ -343,6 +347,13 @@ class Engine {
 
 	function onScene(levelNum:Int) {
 		trace('[SCENE ${levelNum}]');
+
+		// if the level is loaded after a level-reset, unpress the "r" key
+		if (isReset) {
+			sendGameInput(82, false);
+		}
+		isReset = false;
+
 		if (fullgameVideo != null && fullgameVideo.length >= levelNum) {
 			fullgameLevelCounter = levelNum;
 			loadPlayback(fullgameVideo[fullgameLevelCounter - 1]);
