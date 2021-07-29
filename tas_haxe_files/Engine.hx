@@ -73,6 +73,8 @@ class Engine {
 		untyped window.coffee.clearFullGame = function(string:String) {
 			fullgameVideo = null;
 		}
+
+		/*
 		untyped window.coffee.startLeft = function() {
 			initialDirection = 1;
 		}
@@ -82,6 +84,7 @@ class Engine {
 		untyped window.coffee.startNeutral = function() {
 			initialDirection = 0;
 		}
+		*/
 		/*
 		untyped window.coffee.useFrame = function(fl:Float) {
 			frameLength = truncateFloat(fl, frameLengthDecimalPlaces);
