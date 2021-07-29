@@ -40,6 +40,7 @@ class Engine {
 	var initialDirection = 0;
 
 	var isReset:Bool = false;
+	var advanceFrameInterval:Dynamic;
 
 	public function new() {
 		// Inject our methods into the global scope.
@@ -53,6 +54,7 @@ class Engine {
 		// hook into the helper script
 		untyped window.coffee = {};
 		untyped window.coffee._onScene = onScene;
+		untyped window.coffee._onReset = onReset;
 
 		untyped window.coffee._keyup = this.keyup;
 		untyped window.coffee._keydown = this.keydown;
@@ -242,7 +244,6 @@ class Engine {
 		
 		sendGameInput(82, true);
 		isReset = true;
-		//sendGameInput(82, false);
 
 		recording = new Video.VideoRecorder(initialDirection);
 		control = new PlayControl();
@@ -348,20 +349,30 @@ class Engine {
 	function onScene(levelNum:Int) {
 		trace('[SCENE ${levelNum}]');
 
-		// if the level is loaded after a level-reset, unpress the "r" key
-		if (isReset) {
-			sendGameInput(82, false);
-		}
-		isReset = false;
-
 		if (fullgameVideo != null && fullgameVideo.length >= levelNum) {
 			fullgameLevelCounter = levelNum;
 			loadPlayback(fullgameVideo[fullgameLevelCounter - 1]);
 			control.paused = false;
-			control.frame = 0;
+			control.frame = 20;
 			control.speed = 1;
 			primeControls(false);
 		}
+	}
+
+	function onReset() {
+		if (isReset) {
+			sendGameInput(82, false);
+
+			// After the player reset a level, we want to skip the fade animation to frame zero of the level.
+			// So I trigger the pause callback with inerval. The fade takes 20 frames.
+			var count = 0;			
+			advanceFrameInterval = Browser.window.setInterval(function(){
+				triggerPausedCallback();
+				count++;
+				if (count >= 19) Browser.window.clearInterval(advanceFrameInterval);
+			}, frameLength);
+		}
+		isReset = false;
 	}
 
 	function truncateFloat(number:Float, digits:Int):Float {

@@ -183,6 +183,7 @@ var Engine = function() {
 	};
 	window.coffee = { };
 	window.coffee._onScene = $bind(this,this.onScene);
+	window.coffee._onReset = $bind(this,this.onReset);
 	window.coffee._keyup = $bind(this,this.keyup);
 	window.coffee._keydown = $bind(this,this.keydown);
 	window.coffee._getSpeed = function() {
@@ -250,7 +251,7 @@ Engine.prototype = {
 				if(_gthis.control.frame + 1 >= player.video.pauseFrame) {
 					if(_gthis.fullgameVideo == null) {
 						_gthis.control.pause();
-						console.log("tas_haxe_files/Engine.hx:117:","[PAUSE ] @ " + (_gthis.control.frame + 1));
+						console.log("tas_haxe_files/Engine.hx:119:","[PAUSE ] @ " + (_gthis.control.frame + 1));
 						_gthis.control.silent = false;
 					} else {
 						_gthis.initialDirection = _gthis.fullgameVideo[_gthis.fullgameLevelCounter - 1].initialDirection;
@@ -349,19 +350,19 @@ Engine.prototype = {
 		}
 		if(this.initialDirection == 1) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:224:","---> Holding controls: LEFT.");
+				console.log("tas_haxe_files/Engine.hx:227:","---> Holding controls: LEFT.");
 			}
 			this.sendGameInput(37,true);
 		}
 		if(this.initialDirection == 2) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:229:","---> Holding controls: RIGHT.");
+				console.log("tas_haxe_files/Engine.hx:232:","---> Holding controls: RIGHT.");
 			}
 			this.sendGameInput(39,true);
 		}
 		if(this.initialDirection == 0) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:234:","---> Holding controls: NONE.");
+				console.log("tas_haxe_files/Engine.hx:237:","---> Holding controls: NONE.");
 			}
 		}
 	}
@@ -369,7 +370,7 @@ Engine.prototype = {
 		if(replay == null) {
 			replay = false;
 		}
-		console.log("tas_haxe_files/Engine.hx:241:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
+		console.log("tas_haxe_files/Engine.hx:244:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
 		this.sendGameInput(82,true);
 		this.isReset = true;
 		this.recording = new VideoRecorder(this.initialDirection);
@@ -384,13 +385,13 @@ Engine.prototype = {
 	,handleInterfaceInput: function(input,ctrlKey,altKey) {
 		var oldControl = JSON.parse(JSON.stringify(this.control));
 		if(input == CoffeeInput.StepFrame && this.control.paused) {
-			console.log("tas_haxe_files/Engine.hx:265:","[STEP  ] @ " + (this.control.frame + 1));
+			console.log("tas_haxe_files/Engine.hx:267:","[STEP  ] @ " + (this.control.frame + 1));
 			this.triggerPausedCallback();
 			return true;
 		}
 		if(input == CoffeeInput.Pause) {
 			if(!oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:273:","[PAUSE ] @ " + (this.control.frame + 1));
+				console.log("tas_haxe_files/Engine.hx:275:","[PAUSE ] @ " + (this.control.frame + 1));
 			}
 			this.control.pause();
 			return true;
@@ -412,7 +413,7 @@ Engine.prototype = {
 		if(playAction) {
 			this.control.paused = false;
 			if(oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:294:","[PLAY  ] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:296:","[PLAY  ] @ " + this.control.frame);
 			}
 			this.triggerPausedCallback();
 			return true;
@@ -447,8 +448,8 @@ Engine.prototype = {
 			if(ctrlKey && !altKey) {
 				this.control.pause();
 				var video = this.recording.saveVideo(this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:337:","[SAVE slot " + slot + "] @ " + this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:338:","data: " + video.toString());
+				console.log("tas_haxe_files/Engine.hx:339:","[SAVE slot " + slot + "] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:340:","data: " + video.toString());
 				this.slots[slot] = video;
 				return true;
 			}
@@ -456,19 +457,30 @@ Engine.prototype = {
 		return false;
 	}
 	,onScene: function(levelNum) {
-		console.log("tas_haxe_files/Engine.hx:349:","[SCENE " + levelNum + "]");
-		if(this.isReset) {
-			this.sendGameInput(82,false);
-		}
-		this.isReset = false;
+		console.log("tas_haxe_files/Engine.hx:351:","[SCENE " + levelNum + "]");
 		if(this.fullgameVideo != null && this.fullgameVideo.length >= levelNum) {
 			this.fullgameLevelCounter = levelNum;
 			this.loadPlayback(this.fullgameVideo[this.fullgameLevelCounter - 1]);
 			this.control.paused = false;
-			this.control.frame = 0;
+			this.control.frame = 20;
 			this.control.speed = 1;
 			this.primeControls(false);
 		}
+	}
+	,onReset: function() {
+		var _gthis = this;
+		if(this.isReset) {
+			this.sendGameInput(82,false);
+			var count = 0;
+			this.advanceFrameInterval = window.setInterval(function() {
+				_gthis.triggerPausedCallback();
+				count += 1;
+				if(count >= 19) {
+					window.clearInterval(_gthis.advanceFrameInterval);
+				}
+			},this.frameLength);
+		}
+		this.isReset = false;
 	}
 	,truncateFloat: function(number,digits) {
 		var re = new EReg("(\\d+\\.\\d{" + digits + "})(\\d)","i");

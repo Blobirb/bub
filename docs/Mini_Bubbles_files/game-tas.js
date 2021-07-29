@@ -2546,7 +2546,7 @@ var Engine;
                 Engine.Renderer.clear();
 
                 // coffee._getSpeed is greater than 1 - TAS tool is in fast motion 
-                while (System.stepTimeCount >= System.STEP_DELTA_TIME || window.coffee._getSpeed() > 1) {
+                //while (System.stepTimeCount >= System.STEP_DELTA_TIME || window.coffee._getSpeed() > 1) {
                     //@ts-ignore
                     System.stepExtrapolation = 1;
                     if (System.inputInStepUpdate) {
@@ -2564,11 +2564,11 @@ var Engine;
                     System.stepTimeCount -= System.STEP_DELTA_TIME;
 
                     // TAS tool is in fast motion - quit the loop to ignore the step_delta_time variable
-                    if (window.coffee._getSpeed() > 1){
+                    //if (window.coffee._getSpeed() > 1){
                         System.stepTimeCount = 0;
-                        break;
-                    }
-                }
+                    //    break;
+                    //}
+                //}
                 //@ts-ignore
                 System.stepExtrapolation = System.stepTimeCount / System.STEP_DELTA_TIME;
                 if (Engine.Renderer.xSizeWindow != window.innerWidth || Engine.Renderer.ySizeWindow != window.innerHeight) {
@@ -6791,6 +6791,8 @@ var Game;
                 Game.triggerActions("resetlevelbutton");
                 Game.triggerActions("resetlevel");
                 Game.triggerActions("lose");
+
+                window.coffee._onReset();
             }
             if (Game.ExitButton.instance.control.pressed && !this.exiting) {
                 this.stepsWait = Game.STEPS_CHANGE_SCENE;
