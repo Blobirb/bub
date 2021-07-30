@@ -17,5 +17,35 @@
         <iframe id="gameFrame" width="100%" height="100%" src="../Mini_Bubbles_files/game-tas.html" frameborder="0" onload="this.contentWindow.focus();" style="display: block; position: absolute; top: 0px; left: 0px; width: 100%; height: 100%;"></iframe>
         <script type="text/javascript" src="../Mini_Bubbles_files/view.js"></script>
         <script type="text/javascript" src="../Mini_Bubbles_files/main.js"></script>
+
+        <script type="text/javascript">
+            window.addEventListener("load", function(){
+                window.coffee = document.getElementById("gameFrame").contentWindow.coffee;
+                var Game = document.getElementById("gameFrame").contentWindow.Game;
+
+                Game.addAction("playlevelbutton", function(){
+                    coffee._onScene(Game.Level.nextIndex);
+                });
+                Game.addAction("resetlevelbutton", function(){
+                    coffee._onScene(Game.Level.index);
+                });
+            });
+
+            /*
+            window.coffee = {};
+
+            window.coffee.load = function(string) {
+                document.getElementById("gameFrame").contentWindow.coffee.load(string);
+            }
+
+            window.coffee.loadFullGame = function(array) {
+                document.getElementById("gameFrame").contentWindow.coffee.loadFullGame(array);
+            }
+
+            window.coffee.clearFullGame = function() {
+                document.getElementById("gameFrame").contentWindow.coffee.clearFullGame();
+            }
+            */
+        </script>
     </body
 ></html>

@@ -6760,7 +6760,7 @@ var Game;
             _super.prototype.onReset.call(this);
 
             // TAS - notifying the TAS tool on restarting the level
-            window.coffee._onScene(Level.index);
+            //window.coffee._onScene(Level.index);
 
             //triggerActions("play");
         };

@@ -62,15 +62,17 @@ class Engine {
 		untyped window.coffee._getFrameLength = function() { return frameLength; }
 
 		// API for runners
-		untyped window.coffee.load = function(string:String) {
-			slots[0] = new Video(string);
+		untyped window.coffee.load = function(string:String, ?slot:Int) {
+			if (slot == null || slot > 9 || slot < 0)
+				slot = 0;
+			slots[slot] = new Video(string);
 		}
 		untyped window.coffee.loadFullGame = function(strings:Array<String>) {
 			fullgameVideo = strings.map(function(videoString) {
 				return new Video(videoString);
 			});
 		}
-		untyped window.coffee.clearFullGame = function(string:String) {
+		untyped window.coffee.clearFullGame = function() {
 			fullgameVideo = null;
 		}
 
@@ -365,7 +367,7 @@ class Engine {
 			fullgameLevelCounter = levelNum;
 			loadPlayback(fullgameVideo[fullgameLevelCounter - 1]);
 			control.paused = false;
-			control.frame = 20;
+			control.frame = 0;
 			control.speed = 1;
 			primeControls(false);
 		}
