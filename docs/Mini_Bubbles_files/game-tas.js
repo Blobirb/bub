@@ -6078,7 +6078,7 @@ var Game;
             if (this.nextSceneClass == null) {
                 Game.Level.speedrun = false;
                 Game.Level.nextIndex = index;
-                this.stepsWait = Game.STEPS_CHANGE_SCENE;
+                this.stepsWait = 2;
                 this.nextSceneClass = Game.Level;
                 for (var _i = 0, _a = this.buttons; _i < _a.length; _i++) {
                     var button = _a[_i];
@@ -6655,7 +6655,7 @@ var Game;
             Game.Level.countStepsSpeedrun = isNew ? 0 : Game.dataSpeedrun;
             Game.LevelSaveManager.hasSpeedrunRecord = false;
             Game.Level.nextIndex = isNew ? 1 : Game.levelSpeedrun;
-            this.stepsWait = Game.STEPS_CHANGE_SCENE;
+            this.stepsWait = 2;
             this.nextSceneClass = Game.Level;
             Game.SceneFade.setColor(26, 26, 26);
             Game.triggerActions("playlevelbutton");
