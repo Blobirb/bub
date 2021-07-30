@@ -39,7 +39,7 @@ class Engine {
 	var _now:Dynamic;
 	var initialDirection = 0;
 
-	var isReset:Bool = false;
+	var isInReset:Bool = false;
 	var advanceFrameInterval:Dynamic;
 
 	public function new() {
@@ -241,12 +241,21 @@ class Engine {
 	}
 
 	function resetLevel(?slot:Int, ?replay:Bool) {
+		if (isInReset) return;
+
 		if (replay == null)
 			replay = false;
 		trace('[${replay ? "REPLAY" : "RESET to"} ${(slot == null) ? "start" : "slot " + Std.string(slot) + "..."}]');
 		
+		Browser.window.clearInterval(advanceFrameInterval);
+		
 		sendGameInput(82, true);
-		isReset = true;
+		//untyped js.Syntax.code("Game.Level.nextSceneClass = 'reset';");
+		//untyped js.Syntax.code("Game.Level.stepsWait = 0;");
+		//Browser.window["Game"].Level.nextSceneClass = "reset";
+		//Browser.window["Game"].Level.stepsWait = 0;
+				
+		isInReset = true;
 
 		recording = new Video.VideoRecorder(initialDirection);
 		control = new PlayControl();
@@ -363,7 +372,7 @@ class Engine {
 	}
 
 	function onReset() {
-		if (isReset) {
+		if (isInReset) {
 			sendGameInput(82, false);
 
 			// After the player reset a level, we want to skip the fade animation to frame zero of the level.
@@ -372,10 +381,13 @@ class Engine {
 			advanceFrameInterval = Browser.window.setInterval(function(){
 				triggerPausedCallback();
 				count++;
-				if (count >= 19) Browser.window.clearInterval(advanceFrameInterval);
+				if (count >= 19) {
+					Browser.window.clearInterval(advanceFrameInterval);
+					isInReset = false;
+				}
 			}, frameLength);
 		}
-		isReset = false;
+		//isInReset = false;
 	}
 
 	function truncateFloat(number:Float, digits:Int):Float {
