@@ -163,7 +163,7 @@ PlayControl.prototype = {
 	}
 };
 var Engine = function() {
-	this.isReset = false;
+	this.isInReset = false;
 	this.initialDirection = 0;
 	this.fakeTime = 0;
 	this.pausedCallback = haxe_ds_Option.None;
@@ -208,15 +208,6 @@ var Engine = function() {
 	window.coffee.clearFullGame = function(string) {
 		_gthis.fullgameVideo = null;
 	};
-	window.coffee.startLeft = function() {
-		_gthis.initialDirection = 1;
-	};
-	window.coffee.startRight = function() {
-		_gthis.initialDirection = 2;
-	};
-	window.coffee.startNeutral = function() {
-		_gthis.initialDirection = 0;
-	};
 	this.fakeTime = this._now();
 	this.slots = [];
 	this.slots.push(new Video());
@@ -251,7 +242,7 @@ Engine.prototype = {
 				if(_gthis.control.frame + 1 >= player.video.pauseFrame) {
 					if(_gthis.fullgameVideo == null) {
 						_gthis.control.pause();
-						console.log("tas_haxe_files/Engine.hx:119:","[PAUSE ] @ " + (_gthis.control.frame + 1));
+						console.log("tas_haxe_files/Engine.hx:122:","[PAUSE ] @ " + (_gthis.control.frame + 1));
 						_gthis.control.silent = false;
 					} else {
 						_gthis.initialDirection = _gthis.fullgameVideo[_gthis.fullgameLevelCounter - 1].initialDirection;
@@ -350,29 +341,33 @@ Engine.prototype = {
 		}
 		if(this.initialDirection == 1) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:227:","---> Holding controls: LEFT.");
+				console.log("tas_haxe_files/Engine.hx:229:","---> Holding controls: LEFT.");
 			}
 			this.sendGameInput(37,true);
 		}
 		if(this.initialDirection == 2) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:232:","---> Holding controls: RIGHT.");
+				console.log("tas_haxe_files/Engine.hx:234:","---> Holding controls: RIGHT.");
 			}
 			this.sendGameInput(39,true);
 		}
 		if(this.initialDirection == 0) {
 			if(buffer) {
-				console.log("tas_haxe_files/Engine.hx:237:","---> Holding controls: NONE.");
+				console.log("tas_haxe_files/Engine.hx:239:","---> Holding controls: NONE.");
 			}
 		}
 	}
 	,resetLevel: function(slot,replay) {
+		if(this.isInReset) {
+			return;
+		}
 		if(replay == null) {
 			replay = false;
 		}
-		console.log("tas_haxe_files/Engine.hx:244:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
+		console.log("tas_haxe_files/Engine.hx:248:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
+		window.clearInterval(this.advanceFrameInterval);
 		this.sendGameInput(82,true);
-		this.isReset = true;
+		this.isInReset = true;
 		this.recording = new VideoRecorder(this.initialDirection);
 		this.control = new PlayControl();
 		this.primeControls(true);
@@ -385,13 +380,13 @@ Engine.prototype = {
 	,handleInterfaceInput: function(input,ctrlKey,altKey) {
 		var oldControl = JSON.parse(JSON.stringify(this.control));
 		if(input == CoffeeInput.StepFrame && this.control.paused) {
-			console.log("tas_haxe_files/Engine.hx:267:","[STEP  ] @ " + (this.control.frame + 1));
+			console.log("tas_haxe_files/Engine.hx:278:","[STEP  ] @ " + (this.control.frame + 1));
 			this.triggerPausedCallback();
 			return true;
 		}
 		if(input == CoffeeInput.Pause) {
 			if(!oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:275:","[PAUSE ] @ " + (this.control.frame + 1));
+				console.log("tas_haxe_files/Engine.hx:286:","[PAUSE ] @ " + (this.control.frame + 1));
 			}
 			this.control.pause();
 			return true;
@@ -413,7 +408,7 @@ Engine.prototype = {
 		if(playAction) {
 			this.control.paused = false;
 			if(oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:296:","[PLAY  ] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:307:","[PLAY  ] @ " + this.control.frame);
 			}
 			this.triggerPausedCallback();
 			return true;
@@ -448,8 +443,8 @@ Engine.prototype = {
 			if(ctrlKey && !altKey) {
 				this.control.pause();
 				var video = this.recording.saveVideo(this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:339:","[SAVE slot " + slot + "] @ " + this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:340:","data: " + video.toString());
+				console.log("tas_haxe_files/Engine.hx:350:","[SAVE slot " + slot + "] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:351:","data: " + video.toString());
 				this.slots[slot] = video;
 				return true;
 			}
@@ -457,7 +452,7 @@ Engine.prototype = {
 		return false;
 	}
 	,onScene: function(levelNum) {
-		console.log("tas_haxe_files/Engine.hx:351:","[SCENE " + levelNum + "]");
+		console.log("tas_haxe_files/Engine.hx:362:","[SCENE " + levelNum + "]");
 		if(this.fullgameVideo != null && this.fullgameVideo.length >= levelNum) {
 			this.fullgameLevelCounter = levelNum;
 			this.loadPlayback(this.fullgameVideo[this.fullgameLevelCounter - 1]);
@@ -469,7 +464,7 @@ Engine.prototype = {
 	}
 	,onReset: function() {
 		var _gthis = this;
-		if(this.isReset) {
+		if(this.isInReset) {
 			this.sendGameInput(82,false);
 			var count = 0;
 			this.advanceFrameInterval = window.setInterval(function() {
@@ -477,10 +472,10 @@ Engine.prototype = {
 				count += 1;
 				if(count >= 19) {
 					window.clearInterval(_gthis.advanceFrameInterval);
+					_gthis.isInReset = false;
 				}
 			},this.frameLength);
 		}
-		this.isReset = false;
 	}
 	,truncateFloat: function(number,digits) {
 		var re = new EReg("(\\d+\\.\\d{" + digits + "})(\\d)","i");
@@ -616,7 +611,6 @@ Main.main = function() {
 	Main.infoTrace("Alt + [0-9] to play back video in the respective slot, pausing on frame 1.");
 	Main.infoTrace("[p] to reset and play the video in slot 0 in normal speed.");
 	Main.infoTrace("`coffee.load(string)` to load a video into slot 0.");
-	Main.infoTrace("`coffee.startLeft()` / `coffee.StartRight()` / `coffee.StartNeutral()` - configure the inputs on frame 0 of a level.");
 	Main.infoTrace("`coffee.loadFullGame(array<string>)` to play a full game of several levels. Parameter is array of video codes.");
 	Main.infoTrace("`coffee.clearFullGame()` to delete the current loaded full game video.");
 	var engine = new Engine();
