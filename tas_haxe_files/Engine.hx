@@ -71,6 +71,11 @@ class Engine {
 			fullgameVideo = strings.map(function(videoString) {
 				return new Video(videoString);
 			});
+
+			// Run the game on normal speed, because TAS commands are diabled
+			control.speed = 1;
+			control.paused = false;
+			triggerPausedCallback();
 		}
 		untyped window.coffee.clearFullGame = function() {
 			fullgameVideo = null;
