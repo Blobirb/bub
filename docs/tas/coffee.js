@@ -361,16 +361,16 @@ Engine.prototype = {
 		}
 	}
 	,resetLevel: function(slot,replay) {
-		if(this.isInReset) {
-			return;
-		}
+		var _gthis = this;
 		if(replay == null) {
 			replay = false;
 		}
-		console.log("tas_haxe_files/Engine.hx:250:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
-		window.clearInterval(this.advanceFrameInterval);
+		console.log("tas_haxe_files/Engine.hx:251:","[" + (replay ? "REPLAY" : "RESET to") + " " + (slot == null ? "start" : "slot " + (slot == null ? "null" : "" + slot) + "...") + "]");
 		this.sendGameInput(82,true);
-		this.isInReset = true;
+		var tmp = this.control.speed == 0 ? 100 : this.frameLength;
+		window.setTimeout(function() {
+			_gthis.sendGameInput(82,false);
+		},tmp);
 		this.recording = new VideoRecorder(this.initialDirection);
 		this.control = new PlayControl();
 		this.primeControls(true);
@@ -383,13 +383,13 @@ Engine.prototype = {
 	,handleInterfaceInput: function(input,ctrlKey,altKey) {
 		var oldControl = JSON.parse(JSON.stringify(this.control));
 		if(input == CoffeeInput.StepFrame && this.control.paused) {
-			console.log("tas_haxe_files/Engine.hx:280:","[STEP  ] @ " + (this.control.frame + 1));
+			console.log("tas_haxe_files/Engine.hx:283:","[STEP  ] @ " + (this.control.frame + 1));
 			this.triggerPausedCallback();
 			return true;
 		}
 		if(input == CoffeeInput.Pause) {
 			if(!oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:288:","[PAUSE ] @ " + (this.control.frame + 1));
+				console.log("tas_haxe_files/Engine.hx:291:","[PAUSE ] @ " + (this.control.frame + 1));
 			}
 			this.control.pause();
 			return true;
@@ -411,7 +411,7 @@ Engine.prototype = {
 		if(playAction) {
 			this.control.paused = false;
 			if(oldControl.paused) {
-				console.log("tas_haxe_files/Engine.hx:309:","[PLAY  ] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:312:","[PLAY  ] @ " + this.control.frame);
 			}
 			this.triggerPausedCallback();
 			return true;
@@ -446,8 +446,8 @@ Engine.prototype = {
 			if(ctrlKey && !altKey) {
 				this.control.pause();
 				var video = this.recording.saveVideo(this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:352:","[SAVE slot " + slot + "] @ " + this.control.frame);
-				console.log("tas_haxe_files/Engine.hx:353:","data: " + video.toString());
+				console.log("tas_haxe_files/Engine.hx:355:","[SAVE slot " + slot + "] @ " + this.control.frame);
+				console.log("tas_haxe_files/Engine.hx:356:","data: " + video.toString());
 				this.slots[slot] = video;
 				return true;
 			}
@@ -455,7 +455,7 @@ Engine.prototype = {
 		return false;
 	}
 	,onScene: function(levelNum) {
-		console.log("tas_haxe_files/Engine.hx:364:","[SCENE " + levelNum + "]");
+		console.log("tas_haxe_files/Engine.hx:367:","[SCENE " + levelNum + "]");
 		if(this.fullgameVideo != null && this.fullgameVideo.length >= levelNum) {
 			this.fullgameLevelCounter = levelNum;
 			this.loadPlayback(this.fullgameVideo[this.fullgameLevelCounter - 1]);
@@ -467,18 +467,14 @@ Engine.prototype = {
 	}
 	,onReset: function() {
 		var _gthis = this;
-		if(this.isInReset) {
-			this.sendGameInput(82,false);
-			var count = 0;
-			this.advanceFrameInterval = window.setInterval(function() {
-				_gthis.triggerPausedCallback();
-				count += 1;
-				if(count >= 19) {
-					window.clearInterval(_gthis.advanceFrameInterval);
-					_gthis.isInReset = false;
-				}
-			},this.frameLength);
-		}
+		var count = 0;
+		var advanceFrameInterval = window.setInterval(function() {
+			_gthis.triggerPausedCallback();
+			count += 1;
+			if(count >= 19) {
+				clearInterval(advanceFrameInterval);
+			}
+		},this.frameLength);
 	}
 	,truncateFloat: function(number,digits) {
 		var re = new EReg("(\\d+\\.\\d{" + digits + "})(\\d)","i");

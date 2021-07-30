@@ -40,7 +40,7 @@ class Engine {
 	var initialDirection = 0;
 
 	var isInReset:Bool = false;
-	var advanceFrameInterval:Dynamic;
+	//var advanceFrameInterval:Dynamic;
 
 	public function new() {
 		// Inject our methods into the global scope.
@@ -243,21 +243,24 @@ class Engine {
 	}
 
 	function resetLevel(?slot:Int, ?replay:Bool) {
-		if (isInReset) return;
+		//if (isInReset) return;
+		//isInReset = true;
 
 		if (replay == null)
 			replay = false;
 		trace('[${replay ? "REPLAY" : "RESET to"} ${(slot == null) ? "start" : "slot " + Std.string(slot) + "..."}]');
 		
-		Browser.window.clearInterval(advanceFrameInterval);
+		//Browser.window.clearInterval(advanceFrameInterval);
+		
 		
 		sendGameInput(82, true);
-		//untyped js.Syntax.code("Game.Level.nextSceneClass = 'reset';");
-		//untyped js.Syntax.code("Game.Level.stepsWait = 0;");
-		//Browser.window["Game"].Level.nextSceneClass = "reset";
-		//Browser.window["Game"].Level.stepsWait = 0;
-				
-		isInReset = true;
+
+		Browser.window.setTimeout(function() {
+			sendGameInput(82, false);
+		}, control.speed == 0 ? 100 : frameLength);
+		
+		//untyped Game.Level.nextSceneClass = 'reset';
+		//untyped Game.Level.stepsWait = 0;
 
 		recording = new Video.VideoRecorder(initialDirection);
 		control = new PlayControl();
@@ -374,21 +377,21 @@ class Engine {
 	}
 
 	function onReset() {
-		if (isInReset) {
-			sendGameInput(82, false);
+		//if (isInReset) {
+			//sendGameInput(82, false);
 
 			// After the player reset a level, we want to skip the fade animation to frame zero of the level.
 			// So I trigger the pause callback with inerval. The fade takes 20 frames.
 			var count = 0;			
-			advanceFrameInterval = Browser.window.setInterval(function(){
+			var advanceFrameInterval = Browser.window.setInterval(function(){
 				triggerPausedCallback();
 				count++;
 				if (count >= 19) {
-					Browser.window.clearInterval(advanceFrameInterval);
-					isInReset = false;
+					untyped clearInterval(advanceFrameInterval);
+					//isInReset = false;
 				}
 			}, frameLength);
-		}
+		//}
 		//isInReset = false;
 	}
 
