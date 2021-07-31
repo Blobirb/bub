@@ -10,7 +10,7 @@ class PlayControl {
 	public var frame:Int = 0; // Frames since level start. Inputs do happen on frame 0!
 	public var paused:Bool = false; // If true, wait for frame advance to run.
 	public var speed:Int = 0; // 0 for slow, 1 for normal, 2 for fast forward.
-	public var silent:Bool = false; // Hide input messages?
+	public var silent:Bool = false; // Hide input messages on the console
 
 	public function new() {}
 
@@ -21,35 +21,27 @@ class PlayControl {
 }
 
 class Engine {
-	var frameLengthDecimalPlaces = 8;
+	//var frameLengthDecimalPlaces = 8;
 	var frameLength:Float = 16.66666666; // 60 FPS
+	var fps:Float;
 
 	var control = new PlayControl();
 	var playback:Option<Video.VideoPlayer> = None; // If this is initialized, we're in playback.
 	var recording:Video.VideoRecorder = new Video.VideoRecorder(0);
 	var slots:Array<Video>;
 
-	var fullgameVideo:Dynamic = null; // Special level-by-level videos
+	var fullgameVideo:Dynamic = null; // Array of multiple videos, to play several levels in one playback
 	var fullgameLevelCounter:Int = 0;
 
 	var pausedCallback:Option<Dynamic> = None;
-	var fakeTime:Float = 0;
-
 	var _requestAnimationFrame:Dynamic;
-	var _now:Dynamic;
-	var initialDirection = 0;
 
-	var isInReset:Bool = false;
-	//var advanceFrameInterval:Dynamic;
+	var initialDirection = 0; // Not needed for NoaDev games, but the parameter is needed for the Video object.
 
 	public function new() {
 		// Inject our methods into the global scope.
 		_requestAnimationFrame = Browser.window.requestAnimationFrame;
-		_now = Browser.window.performance.now;
 		untyped window.requestAnimationFrame = this.requestAnimationFrame;
-		untyped window.performance.now = function() {
-			return fakeTime;
-		}
 
 		// hook into the helper script
 		untyped window.coffee = {};
@@ -58,8 +50,6 @@ class Engine {
 
 		untyped window.coffee._keyup = this.keyup;
 		untyped window.coffee._keydown = this.keydown;
-		untyped window.coffee._getSpeed = function() { return control.speed; }
-		untyped window.coffee._getFrameLength = function() { return frameLength; }
 
 		// API for runners
 		untyped window.coffee.load = function(string:String, ?slot:Int) {
@@ -72,7 +62,7 @@ class Engine {
 				return new Video(videoString);
 			});
 
-			// Run the game on normal speed, because TAS commands are diabled
+			// Run the game on normal speed, because TAS commands are disabled in "full-game" mode
 			control.speed = 1;
 			control.paused = false;
 			triggerPausedCallback();
@@ -82,17 +72,6 @@ class Engine {
 		}
 
 		/*
-		untyped window.coffee.startLeft = function() {
-			initialDirection = 1;
-		}
-		untyped window.coffee.startRight = function() {
-			initialDirection = 2;
-		}
-		untyped window.coffee.startNeutral = function() {
-			initialDirection = 0;
-		}
-		*/
-		/*
 		untyped window.coffee.useFrame = function(fl:Float) {
 			frameLength = truncateFloat(fl, frameLengthDecimalPlaces);
 		}
@@ -101,20 +80,18 @@ class Engine {
 		}
 		*/
 
-		fakeTime = _now();
-
 		slots = new Array();
 		for (i in 0...10) {
 			slots.push(new Video());
 		}
 
 		control.speed = 1;
+
+		calculateFps();
 	}
 
 	function wrapCallback(callback:Dynamic) {
 		return function() {
-			fakeTime += frameLength;
-
 			switch playback {
 				case Some(player):
 					for (action in player.getActions(control.frame)) {
@@ -129,18 +106,15 @@ class Engine {
 							trace('[PAUSE ] @ ${control.frame + 1}');
 							control.silent = false;
 						} else {
-							// for fullgame playback, prime the initial direction controls
-
-							initialDirection = fullgameVideo[fullgameLevelCounter - 1].initialDirection;
 							control.frame = 0;
-							primeControls(true);
+							primeControls();
 						}
 
 						playback = None;
 					}
-					callback(fakeTime);
+					callback();
 				case None:
-					callback(fakeTime);
+					callback();
 			}
 
 			control.frame += 1;
@@ -154,7 +128,13 @@ class Engine {
 				case 0:
 					Browser.window.setTimeout(wrappedCallback, 100);
 				case 1:
-					_requestAnimationFrame(wrappedCallback);
+					// If the browser runs on 60, use the original requestAnimationFrame function
+					if (fps >= 58 && fps <= 62)
+						_requestAnimationFrame(wrappedCallback);
+					// Otherwise, force the game to run on 60fps by using setTimeout
+					else
+						Browser.window.setTimeout(wrappedCallback, frameLength);
+						
 				case _:
 					Browser.window.setTimeout(wrappedCallback, 0);
 			}
@@ -227,49 +207,28 @@ class Engine {
 		}
 	}
 
-	function primeControls(buffer:Bool) {
+	function primeControls() {
 		for (code in Video.keyCodes) {
 			sendGameInput(code, false);
-		}
-		if (initialDirection == 1) {
-			if (buffer)
-				trace("---> Holding controls: LEFT.");
-			sendGameInput(37, true);
-		}
-		if (initialDirection == 2) {
-			if (buffer)
-				trace("---> Holding controls: RIGHT.");
-			sendGameInput(39, true);
-		}
-		if (initialDirection == 0) {
-			if (buffer)
-				trace("---> Holding controls: NONE.");
 		}
 	}
 
 	function resetLevel(?slot:Int, ?replay:Bool) {
-		//if (isInReset) return;
-		//isInReset = true;
-
 		if (replay == null)
 			replay = false;
 		trace('[${replay ? "REPLAY" : "RESET to"} ${(slot == null) ? "start" : "slot " + Std.string(slot) + "..."}]');
 		
-		//Browser.window.clearInterval(advanceFrameInterval);
-		
-		
+		// Press the "r" key to trigger in-game reset
 		sendGameInput(82, true);
 
+		// NoaDev games requires the "r" key to be pressed during the entire frame, so we release it after 1 frame has passed.
 		Browser.window.setTimeout(function() {
 			sendGameInput(82, false);
 		}, control.speed == 0 ? 100 : frameLength);
-		
-		//untyped Game.Level.nextSceneClass = 'reset';
-		//untyped Game.Level.stepsWait = 0;
 
 		recording = new Video.VideoRecorder(initialDirection);
 		control = new PlayControl();
-		primeControls(true);
+		primeControls();
 	}
 
 	function loadPlayback(video:Video) {
@@ -369,35 +328,35 @@ class Engine {
 	}
 
 	function onScene(levelNum:Int) {
+		// Function that is called when a level in the game is loaded.
+		// This function is called from the game code itself.
+
 		trace('[SCENE ${levelNum}]');
 
+		// If we are in full game mode, prepare a video playback for the current level as the player enters it
 		if (fullgameVideo != null && fullgameVideo.length >= levelNum) {
 			fullgameLevelCounter = levelNum;
 			loadPlayback(fullgameVideo[fullgameLevelCounter - 1]);
 			control.paused = false;
 			control.frame = 0;
 			control.speed = 1;
-			primeControls(false);
+			primeControls();
 		}
 	}
 
 	function onReset() {
-		//if (isInReset) {
-			//sendGameInput(82, false);
-
-			// After the player reset a level, we want to skip the fade animation to frame zero of the level.
-			// So I trigger the pause callback with inerval. The fade takes 20 frames.
-			var count = 0;			
-			var advanceFrameInterval = Browser.window.setInterval(function(){
-				triggerPausedCallback();
-				count++;
-				if (count >= 19) {
-					untyped clearInterval(advanceFrameInterval);
-					//isInReset = false;
-				}
-			}, frameLength);
-		//}
-		//isInReset = false;
+		// After the player resets a level, we want to skip the fade animation to frame zero of the level.
+		// So the pause callback is triggered several times with interval. The fade takes 20 frames.
+		// This function is called from the game code itself.
+		var count = 0;			
+		var advanceFrameInterval = Browser.window.setInterval(function(){
+			triggerPausedCallback();
+			count++;
+			if (count >= 19) {
+				// Stop the loop
+				untyped clearInterval(advanceFrameInterval);
+			}
+		}, frameLength);
 	}
 
 	function truncateFloat(number:Float, digits:Int):Float {
@@ -407,5 +366,30 @@ class Engine {
 			return Std.parseFloat(re.matched(1));
 		}
 		else return number;
+	}
+
+	function calculateFps() {
+		// Function to calculate the browser FPS, based on how many times the "requestAnimationFrame" function runs in one second.
+		// Update the FPS variable of the engine once per second
+
+		var times = [];
+		var calculatedFps;
+
+    	function refreshLoop() {
+            var now = Browser.window.performance.now();
+        	while (times.length > 0 && times[0] <= now - 1000) {
+            	times.shift();
+        	}
+        	times.push(now);
+			calculatedFps = times.length;
+			
+			_requestAnimationFrame(refreshLoop);	
+		}
+		
+		Browser.window.setInterval(function(){
+			fps = calculatedFps;
+		}, 1000);
+
+	    refreshLoop();
 	}
 }

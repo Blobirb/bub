@@ -2533,6 +2533,9 @@ var Engine;
             System.needReset = true;
         };
         System.update = function () {
+            // TAS - moved the requestAnimationFrame to the top of the function, so a new iteration could be prepared before running the function loop.
+            window.requestAnimationFrame(System.update);
+
             //if(System.hasFocus && !document.hasFocus()){
             //    System.hasFocus = false;
             //    Engine.pause();
@@ -2545,8 +2548,7 @@ var Engine;
                 //@ts-ignore
                 Engine.Renderer.clear();
 
-                // coffee._getSpeed is greater than 1 - TAS tool is in fast motion 
-                //while (System.stepTimeCount >= System.STEP_DELTA_TIME || window.coffee._getSpeed() > 1) {
+                //while (System.stepTimeCount >= System.STEP_DELTA_TIME) {
                     //@ts-ignore
                     System.stepExtrapolation = 1;
                     if (System.inputInStepUpdate) {
@@ -2561,16 +2563,15 @@ var Engine;
                     System.onStepUpdate();
                     //@ts-ignore
                     Engine.Renderer.updateHandCursor();
-                    System.stepTimeCount -= System.STEP_DELTA_TIME;
-
-                    // TAS tool is in fast motion - quit the loop to ignore the step_delta_time variable
-                    //if (window.coffee._getSpeed() > 1){
-                        System.stepTimeCount = 0;
-                    //    break;
-                    //}
+                    
+                    //System.stepTimeCount -= System.STEP_DELTA_TIME;
                 //}
                 //@ts-ignore
-                System.stepExtrapolation = System.stepTimeCount / System.STEP_DELTA_TIME;
+                
+                // TAS - updates run once per loop, so no need to extrapolate movement
+                System.stepExtrapolation = 0;
+                //System.stepExtrapolation = System.stepTimeCount / System.STEP_DELTA_TIME;
+                
                 if (Engine.Renderer.xSizeWindow != window.innerWidth || Engine.Renderer.ySizeWindow != window.innerHeight) {
                     //@ts-ignore
                     Engine.Renderer.fixCanvasSize();
@@ -2591,8 +2592,7 @@ var Engine;
                 //@ts-ignore
                 var nowTime = Date.now() / 1000.0;
                 //@ts-ignore
-                //System.deltaTime = nowTime - System.oldTime;
-                System.deltaTime = window.coffee._getFrameLength();
+                System.deltaTime = nowTime - System.oldTime;
 
                 if (System.deltaTime > System.MAX_DELTA_TIME) {
                     //@ts-ignore
@@ -2605,7 +2605,7 @@ var Engine;
                 System.stepTimeCount += System.deltaTime;
                 System.oldTime = nowTime;
             }
-            window.requestAnimationFrame(System.update);
+            //window.requestAnimationFrame(System.update);
         };
         System.pause = function () {
             //@ts-ignore
@@ -6749,19 +6749,11 @@ var Game;
             new Game.BigButtonDialog();
             new Game.LevelAdLoader();
             Game.Level.countStepsLevel = 0;
-
-            // TAS - notifying the TAS tool on entering a new level
-            //window.coffee._onScene(Level.index);
-
             return _this;
         }
         Level.prototype.onReset = function () {
             Game.Level.countStepsLevel = 0;
             _super.prototype.onReset.call(this);
-
-            // TAS - notifying the TAS tool on restarting the level
-            //window.coffee._onScene(Level.index);
-
             //triggerActions("play");
         };
         Level.prototype.onStepUpdate = function () {
@@ -6791,8 +6783,6 @@ var Game;
                 Game.triggerActions("resetlevelbutton");
                 Game.triggerActions("resetlevel");
                 Game.triggerActions("lose");
-
-                window.coffee._onReset();
             }
             if (Game.ExitButton.instance.control.pressed && !this.exiting) {
                 this.stepsWait = Game.STEPS_CHANGE_SCENE;
