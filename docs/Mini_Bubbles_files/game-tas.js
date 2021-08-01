@@ -6078,6 +6078,7 @@ var Game;
             if (this.nextSceneClass == null) {
                 Game.Level.speedrun = false;
                 Game.Level.nextIndex = index;
+                // TAS - change the transition time for opening a new level, for full-game playbacks
                 this.stepsWait = 2;
                 this.nextSceneClass = Game.Level;
                 for (var _i = 0, _a = this.buttons; _i < _a.length; _i++) {
@@ -6655,6 +6656,7 @@ var Game;
             Game.Level.countStepsSpeedrun = isNew ? 0 : Game.dataSpeedrun;
             Game.LevelSaveManager.hasSpeedrunRecord = false;
             Game.Level.nextIndex = isNew ? 1 : Game.levelSpeedrun;
+            // TAS - change the transition time for opening a new level, for full-game playbacks
             this.stepsWait = 2;
             this.nextSceneClass = Game.Level;
             Game.SceneFade.setColor(26, 26, 26);
