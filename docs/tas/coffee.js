@@ -300,7 +300,7 @@ Engine.prototype = {
 	}
 	,onKey: function(event,down) {
 		if(!Util.isSome(this.playback)) {
-			var suppress = [83,87,65,68,82,80];
+			var suppress = [83,87,65,68,82];
 			if(suppress.indexOf(event.keyCode) == -1) {
 				this.sendGameInput(event.keyCode,down);
 			}
@@ -492,14 +492,14 @@ var KeyBindings = function() { };
 KeyBindings.__name__ = true;
 KeyBindings.fromKeyCode = function(code) {
 	switch(code) {
+	case 13:
+		return haxe_ds_Option.Some(CoffeeInput.Replay);
 	case 65:
 		return haxe_ds_Option.Some(CoffeeInput.Pause);
 	case 68:
 		return haxe_ds_Option.Some(CoffeeInput.PlayNormal);
 	case 70:
 		return haxe_ds_Option.Some(CoffeeInput.PlayFast);
-	case 80:
-		return haxe_ds_Option.Some(CoffeeInput.Replay);
 	case 82:
 		return haxe_ds_Option.Some(CoffeeInput.Reset);
 	case 83:
@@ -600,7 +600,7 @@ Main.main = function() {
 	Main.infoTrace("[0-9] to reset and play back video in the respective slot (used for save states).");
 	Main.infoTrace("Ctrl + [0-9] to save video in the respective slot.");
 	Main.infoTrace("Alt + [0-9] to play back video in the respective slot, pausing on frame 1.");
-	Main.infoTrace("[p] to reset and play the video in slot 0 in normal speed.");
+	Main.infoTrace("[Enter] to reset and play the video in slot 0 in normal speed.");
 	Main.infoTrace("`coffee.load(string, int)` to load a video into the chosen slot.");
 	Main.infoTrace("`coffee.loadFullGame(array<string>)` to play a full game of several levels. Parameter is array of video codes.");
 	Main.infoTrace("`coffee.clearFullGame()` to delete the current loaded full game video.");
@@ -668,6 +668,8 @@ Video.showActionCode = function(actionCode) {
 		return "Down   ";
 	case 4:case 5:
 		return "Action ";
+	case 6:
+		return "Pause  ";
 	}
 	return "???    ";
 };
@@ -737,7 +739,7 @@ VideoRecorder.prototype = {
 				this.video.actions.push({ frame : frame, code : action, down : down});
 			}
 			if(!silent) {
-				console.log("tas_haxe_files/Video.hx:129:","---> " + Video.showActionCode(action) + " " + (down ? "down" : "up  ") + " @ " + frame);
+				console.log("tas_haxe_files/Video.hx:131:","---> " + Video.showActionCode(action) + " " + (down ? "down" : "up  ") + " @ " + frame);
 			}
 			break;
 		case 1:
@@ -916,7 +918,7 @@ js_Boot.__toStr = ({ }).toString;
 Video.headerSize = 24;
 Video.delaySize = 5;
 Video.longDelaySize = 10;
-Video.keyCodes = [37,38,39,40,88,32];
+Video.keyCodes = [37,38,39,40,88,32,80];
 haxe_crypto_Base64.CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 Main.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);

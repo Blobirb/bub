@@ -174,7 +174,7 @@ class Engine {
 	function onKey(event:Dynamic, down:Bool) {
 		if (!Util.isSome(playback)) {
 			// We're not in playback, so we should pass through keys.
-			var suppress = [83, 87, 65, 68, 82, 80]; // prevent pressing alternate movement keys and 'r' and 'p'
+			var suppress = [83, 87, 65, 68, 82]; // prevent pressing alternate movement keys and 'r'
 			if (suppress.indexOf(event.keyCode) == -1)
 				sendGameInput(event.keyCode, down);
 		}
